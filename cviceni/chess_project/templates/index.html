@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Mike's Chess V9 (Analyst Mode)</title>
+    <link rel="stylesheet" href="/static/css/chessboard-1.0.0.min.css">
+    <style>
+        body {
+            background-color: #0d0d0d;
+            color: #00ff41;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        h1 { margin: 10px; text-shadow: 0 0 5px #00ff41; font-size: 1.5rem;}
+        
+        .container { display: flex; gap: 20px; align-items: flex-start; }
+        #board { width: 450px; border: 2px solid #333; }
+        
+        .panel {
+            background: #121212; padding: 15px; border-radius: 4px; border: 1px solid #333;
+            width: 320px; display: flex; flex-direction: column; gap: 10px; max-height: 85vh; overflow-y: auto;
+        }
+
+        /* REPLAY & ANALYSIS STYLES */
+        .pgn-box {
+            width: 100%; height: 60px; background: #000; color: #00ff41; border: 1px solid #333;
+            font-family: monospace; font-size: 0.8em; resize: vertical; box-sizing: border-box;
+        }
+        .eval-container {
+            height: 20px; background: #333; width: 100%; position: relative;
+            border-radius: 2px; overflow: hidden; margin-bottom: 5px;
+        }
+        .eval-bar { height: 100%; background: #00ff41; width: 50%; transition: width 0.5s ease; }
+        .eval-text { text-align: center; font-weight: bold; color: #fff; margin-top: -22px; position: relative; z-index: 2; text-shadow: 1px 1px 2px black;}
+        
+        .pv-box {
+            font-size: 0.8em; color: #aaa; background: #000; padding: 8px;
+            border: 1px solid #333; height: 50px; overflow-y: auto; word-break: break-all;
+        }
+
+        select, button {
+            background: #000; color: #00ff41; border: 1px solid #00ff41;
+            padding: 5px; font-family: inherit; cursor: pointer; font-weight: bold;
+        }
+        button:hover { background: #00ff41; color: #000; }
+        button:disabled { border-color: #333; color: #333; cursor: not-allowed; }
+        
+        /* Analysis Button needs to pop */
+        #analyzeBtn { border-color: #ff00ff; color: #ff00ff; }
+        #analyzeBtn:hover { background: #ff00ff; color: #fff; }
+
+        .row { display: flex; gap: 5px; }
+        .col { flex: 1; }
+        .white-ctrl { border-top: 1px solid #666; padding-top: 5px; }
+        .black-ctrl { border-top: 1px solid #333; padding-top: 5px; }
+        label { font-size: 0.7em; opacity: 0.7; display: block; margin-bottom: 2px;}
+        
+        #replayProgress { font-size: 0.8em; text-align: right; color: #aaa; }
+    </style>
+</head>
+<body>
+
+    <h1>> SYSTEM_CHESS_V9 (HISTORY ANALYST)</h1>
+
+    <div class="container">
+        <div id="board"></div>
+
+        <div class="panel">
+            <div>
+                <label>ENGINE EVALUATION:</label>
+                <div class="eval-container">
+                    <div class="eval-bar" id="evalBar"></div>
+                    <div class="eval-text" id="evalText">0.00</div>
+                </div>
+                <div class="pv-box" id="pvBox">Waiting for analysis...</div>
+            </div>
+
+            <div style="border-top: 1px solid #333; padding-top: 10px;">
+                <label>PGN HISTORY:</label>
+                <textarea id="pgnInput" class="pgn-box" placeholder='Paste PGN here...'></textarea>
+                
+                <div class="row" style="margin-top:5px;">
+                    <button id="loadPgnBtn" style="flex:1;">LOAD</button>
+                    <div id="replayProgress" style="flex:1; padding-top:5px;">Move: 0/0</div>
+                </div>
+                <div class="row" style="margin-top:5px;">
+                    <button id="playReplayBtn" disabled>▶ PLAY</button>
+                    <button id="pauseReplayBtn" disabled>⏸ PAUSE</button>
+                </div>
+                <button id="analyzeBtn" style="margin-top:5px; width:100%;">⚡ ANALYZE CURRENT POSITION</button>
+            </div>
+
+            <hr style="border: 0; border-bottom: 1px solid #333; width: 100%;">
+
+            <div class="row">
+                <div class="col">
+                    <label>YOUR SIDE:</label>
+                    <select id="userColor"><option value="white">White</option><option value="black">Black</option></select>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col white-ctrl">
+                    <label>WHITE STR:</label>
+                    <select id="diffWhite">
+                        <option value="1">Lvl 1</option><option value="10" selected>Lvl 10</option>
+                        <option value="20">Lvl 20 (GM)</option><option value="30" style="color:red">GOD (30)</option>
+                    </select>
+                </div>
+                <div class="col black-ctrl">
+                    <label>BLACK STR:</label>
+                    <select id="diffBlack">
+                        <option value="1">Lvl 1</option><option value="10" selected>Lvl 10</option>
+                        <option value="20">Lvl 20 (GM)</option><option value="30" style="color:red">GOD (30)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 5px;">
+                <button id="startBtn">PLAY NEW GAME</button>
+                <button id="stopBtn" style="border-color:#ff4444; color:#ff4444; display:none;">STOP ALL</button>
+            </div>
+            
+            <div class="status" id="status" style="font-size: 0.8em; color: #666; text-align: center;">Ready.</div>
+        </div>
+    </div>
+
+    <script src="/static/js/jquery-3.5.1.min.js"></script>
+    <script src="/static/js/chess.js"></script>
+    <script src="/static/js/chessboard-1.0.0.min.js"></script>
+
+    <script>
+        var board = null;
+        var game = new Chess();
+        var replayMoves = [];
+        var replayIndex = 0;
+        var replayTimer = null;
+        var playerSide = 'white';
+
+        // --- ANALYSIS LOGIC ---
+        $('#analyzeBtn').click(function() {
+            // 1. Get current board state (FEN)
+            var currentFen = game.fen();
+            var turn = game.turn();
+            
+            // 2. Determine strength to use (use the strongest selected setting for analysis)
+            var wStr = parseInt($('#diffWhite').val());
+            var bStr = parseInt($('#diffBlack').val());
+            var analysisLevel = Math.max(wStr, bStr);
+
+            updateStatus("Analyzing Depth " + (analysisLevel >= 30 ? "30 (SLOW)" : "Auto") + "...");
+            $('#pvBox').text("Calculating best move...");
+
+            $.ajax({
+                url: '/analyze',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ fen: currentFen, difficulty: analysisLevel }),
+                success: function(res) {
+                    if (res.valid) {
+                        updateStatus("Analysis Complete.");
+                        // Update Visuals
+                        if (res.eval) updateEvaluation(res.eval, turn);
+                        if (res.pv) $('#pvBox').text("BEST LINE: " + res.pv);
+                        
+                        // Highlight Best Move on Board (Draw Arrow Hack)
+                        // We highlight the squares FROM and TO
+                        var from = res.best_move.substring(0, 2);
+                        var to = res.best_move.substring(2, 4);
+                        highlightMove(from, to);
+                    }
+                }
+            });
+        });
+
+        function highlightMove(from, to) {
+            // Remove old highlights
+            $('.square-55d63').removeClass('highlight-analyze');
+            
+            // Add custom highlight class via jQuery
+            var $board = $('#board');
+            $board.find('.square-' + from).addClass('highlight-analyze');
+            $board.find('.square-' + to).addClass('highlight-analyze');
+        }
+
+        // --- REPLAY LOGIC ---
+        $('#loadPgnBtn').click(function() {
+            var pgn = $('#pgnInput').val();
+            var tempGame = new Chess();
+            
+            // Allow loading partial PGNs
+            if (!tempGame.load_pgn(pgn)) {
+                // Try forcing it if it's just moves without headers
+                var cleanPgn = pgn.replace(/\d+\./g, ''); // Very basic cleanup
+                // If standard load fails, we rely on the user pasting valid PGN
+                // But let's assume valid PGN for now.
+            }
+            
+            replayMoves = tempGame.history(); 
+            replayIndex = 0;
+            
+            stopEverything();
+            game.reset();
+            board.position('start');
+            
+            $('#replayProgress').text("Move: 0 / " + replayMoves.length);
+            $('#playReplayBtn').prop('disabled', false);
+            $('#pauseReplayBtn').prop('disabled', true);
+            updateStatus("History Loaded.");
+        });
+
+        $('#playReplayBtn').click(function() {
+            if (replayMoves.length === 0) return;
+            $('#playReplayBtn').prop('disabled', true);
+            $('#pauseReplayBtn').prop('disabled', false);
+            
+            replayTimer = setInterval(function() {
+                if (replayIndex >= replayMoves.length) {
+                    clearInterval(replayTimer);
+                    $('#playReplayBtn').prop('disabled', false);
+                    return;
+                }
+                game.move(replayMoves[replayIndex]);
+                board.position(game.fen());
+                replayIndex++;
+                $('#replayProgress').text("Move: " + replayIndex + " / " + replayMoves.length);
+            }, 800);
+        });
+
+        $('#pauseReplayBtn').click(function() {
+            clearInterval(replayTimer);
+            $('#playReplayBtn').prop('disabled', false);
+            $('#pauseReplayBtn').prop('disabled', true);
+        });
+
+        // --- STANDARD GAME ---
+        function onDrop (source, target) {
+            if (replayTimer) return 'snapback'; // Locked during replay
+            var move = game.move({ from: source, to: target, promotion: 'q' });
+            if (move === null) return 'snapback';
+
+            var turn = game.turn();
+            var aiDiff = (playerSide === 'white') ? $('#diffBlack').val() : $('#diffWhite').val();
+            updateStatus("Thinking...");
+            
+            $.ajax({
+                url: '/move', type: 'POST', contentType: 'application/json',
+                data: JSON.stringify({ source: source, target: target, promotion: 'q', difficulty: aiDiff }),
+                success: function(res) {
+                    if (res.valid) {
+                        game.load(res.fen); board.position(res.fen);
+                        if (res.eval) updateEvaluation(res.eval, turn);
+                        if (res.pv) $('#pvBox').text(res.pv);
+                        updateStatus("Your Turn");
+                    }
+                }
+            });
+        }
+
+        // --- VISUALS ---
+        function updateEvaluation(evalObj, turn) {
+            var score = 0;
+            if (evalObj.type === 'mate') {
+                score = (evalObj.value > 0) ? 2000 : -2000;
+                $('#evalText').text("MATE " + Math.abs(evalObj.value));
+            } else {
+                var raw = evalObj.value;
+                score = (turn === 'w') ? raw : -raw;
+                $('#evalText').text((score > 0 ? "+" : "") + (score / 100).toFixed(2));
+            }
+            var visualScore = Math.max(-500, Math.min(500, score));
+            var percentage = 50 + (visualScore / 10);
+            $('#evalBar').css('width', percentage + '%').css('background-color', score >= 0 ? '#00ff41' : '#ff0040');
+        }
+
+        function stopEverything() {
+            clearInterval(replayTimer);
+            $('.square-55d63').removeClass('highlight-analyze');
+        }
+
+        function updateStatus(msg) { $('#status').text("> " + msg); }
+
+        var config = { draggable: true, position: 'start', onDragStart: onDragStart, onDrop: onDrop, pieceTheme: '/static/img/chesspieces/wikipedia/{piece}.png' };
+        board = Chessboard('board', config);
+
+        $('#startBtn').click(function() { 
+            stopEverything(); 
+            playerSide = $('#userColor').val();
+            var diff = (playerSide === 'white') ? $('#diffBlack').val() : $('#diffWhite').val();
+            
+            $.ajax({
+                url: '/new_game', type: 'POST', contentType: 'application/json',
+                data: JSON.stringify({ difficulty: diff, style: 'standard', color: playerSide }),
+                success: function(res) {
+                    game.load(res.fen); board.position(res.fen); board.orientation(playerSide);
+                }
+            });
+        });
+    </script>
+
+    <style>
+        .highlight-analyze {
+            box-shadow: inset 0 0 3px 3px #ff00ff; /* Purple Glow for Analysis */
+        }
+    </style>
+</body>
+</html>
