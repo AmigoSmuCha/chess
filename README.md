@@ -1,70 +1,50 @@
-# [NÁZEV TVÉHO PROJEKTU]
+# Michael Chess
+## The Concept: "Infinite Learning"
 
-> A high-performance, self-learning web-based chess arena where computers battle at high depths, and you can intervene at any moment.
+Unlike a standard chess interface, this project is a **self-learning ecosystem**. It uses **Stockfish** to simulate Computer vs. Computer (CvC) matches. 
 
-![Project Screenshot](path/to/screenshot.png) ## ♟️ About The Project
+The core idea is the **Hive Mind Memory**:
+* Every move calculated at **Depth 32** is not forgotten.
+* The result is stored in `brain.js`.
+* Over time, the simulation stops "thinking" and starts "remembering," making the bots effectively invincible for all cached positions.
 
-This is an HTML/JS based chess interface designed for **Computer vs. Computer (CvC)** simulation and analysis. Unlike standard chess bots, this system is designed to build a persistent memory of "perfect moves".
+## 🚀 Unique Features
 
-The system runs matches in the background using the **Stockfish** engine. Every time a best move is calculated at **Depth 32**, it is stored in `brain.js`. Over time, the system builds a massive library of pre-calculated moves, allowing for instant playback of complex lines without recalculation.
+* **🤖 Automated CvC Evolution:** Leave it running in the background. The bots will play infinitely, constantly expanding the `brain.js` database.
+* **🎮 Human "Chaos" Factor:** At any point, you can pause the simulation, take control of one side, and make a manual move. See if the bot can adapt to your strategy or if it already has a "perfect" response in its memory.
+* **⚡ Zero-Latency Recall:** If a position is in the "brain", the move is executed instantly without any CPU load.
 
-### ✨ Key Features
+## 🛠️ Setup & Local Installation
 
-* **🤖 CvC Automation:** Infinite Computer vs. Computer matches.
-* **🧠 Hive Mind Memory:** Moves calculated at Depth 32 are cached in `brain.js`. The engine gets faster and "smarter" the longer it runs.
-* **🎮 Human Intervention:** You can pause the bot at any time, take control, and play a move yourself. The bot will then resume from your new position.
-* **⚡ Local Execution:** Runs entirely on your machine using your local hardware resources.
+To get the Hive Mind running on your machine, follow these steps:
 
-## 🛠️ Installation & Setup
-
-Since this project relies on the powerful Stockfish engine, you need to manually add the engine executable to the project folder.
-
-1.  **Clone the repository:**
+1.  **Clone the Repository:**
     ```bash
-    git clone [https://github.com/tvoje-jmeno/nazev-projektu.git](https://github.com/tvoje-jmeno/nazev-projektu.git)
-    cd nazev-projektu
+    git clone [https://github.com/AmigoSmuCha/chess.git](https://github.com/AmigoSmuCha/chess.git)
+    cd chess/cviceni/chess_project
     ```
 
-2.  **Download Stockfish:**
-    Go to the [official Stockfish website](https://stockfishchess.org/download/) and download the version compatible with your OS (AVX2 version recommended for best performance).
+2.  **Add the Engine (Crucial):**
+    The Stockfish engine is too heavy for Git, so you need to provide it manually:
+    * Download Stockfish from [stockfishchess.org](https://stockfishchess.org/download/).
+    * Place the executable into the `cviceni/chess_project/` folder.
+    * Rename it to `stockfish` (Linux/Mac) or `stockfish.exe` (Windows).
 
-3.  **Place the Engine:**
-    * Extract the downloaded zip.
-    * Rename the executable file to `stockfish` (or `stockfish.exe` on Windows).
-    * Move the file into the root folder (or the `/engine` folder if one exists) of this project.
+3.  **Launch:**
+    Open `index.html` in your browser (Chrome or Edge recommended for best JS performance).
 
-4.  **Run the Project:**
-    Simply open `index.html` in your modern web browser.
+## 📊 Recommended Specifications
 
-## 📖 Usage Guide
+Running Stockfish at **Depth 32** in a browser is heavy. To build the "brain" efficiently, we recommend:
 
-### The "Brain" (Memory System)
-The project utilizes `brain.js` as a JSON-based memory storage.
-* **Learning:** When the engine calculates a move at **Depth 32**, it saves the FEN string and the best move to the file.
-* **Recall:** If the current board position exists in `brain.js`, the engine plays the move *instantly* without using CPU power.
-* **Background Play:** You can leave the tab open in the background. The bots will continue to play and populate the memory file.
+| Hardware | Requirement |
+| :--- | :--- |
+| **CPU** | **High Priority:** 8-Core+ (Ryzen 7 / i7) with AVX2 support. |
+| **Memory** | **8 GB RAM** minimum for large hash tables. |
+| **Storage** | **SSD** is highly recommended for frequent JSON I/O operations. |
 
-### Intervening (Human Move)
-1.  Watch the bots play.
-2.  Click the **"Stop"** or **"Pause"** button.
-3.  Drag and drop pieces to make your own move.
-4.  Resume the game to see how the bot handles your disruption.
+## 🤝 Community Brain
+Do you have a `brain.js` file with thousands of Depth 32 moves? I'd love to merge it! Feel free to open a Pull Request with your learned data so we can build a truly global chess memory.
 
-## 💻 Recommended Specifications
-
-Calculating chess moves at **Depth 32** is computationally expensive. For the best experience (and to prevent your browser from lagging), the following specs are recommended:
-
-| Component | Minimum | Recommended |
-| :--- | :--- | :--- |
-| **CPU** | Quad-Core (i5 / Ryzen 5) | 8-Core+ (i7 / Ryzen 7) with AVX2 support |
-| **RAM** | 8 GB | 16 GB+ (Hash tables require memory) |
-| **Browser** | Chrome / Firefox / Edge | Chromium-based browser (V8 engine) |
-| **Storage** | HDD | SSD (For faster read/write of brain.js) |
-
-## 🤝 Contributing
-
-Contributions are welcome! If you have a `brain.js` file with a lot of pre-calculated Depth 32 moves, feel free to submit a Pull Request to merge our "brains".
-
-## 📄 License
-
-Distributed under the MIT License.
+---
+*Created by [AmigoSmuCha](https://github.com/AmigoSmuCha)*
